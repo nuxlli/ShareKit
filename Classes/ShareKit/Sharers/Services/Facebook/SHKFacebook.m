@@ -26,19 +26,31 @@
 //
 
 #import "SHKFacebook.h"
-#import "SHKFBStreamDialog.h"
+
+@interface SHKFacebook (Private)
+
+- (void)sendImage;
+
+@end
+
 
 @implementation SHKFacebook
 
-@synthesize session;
+@synthesize facebook;
 @synthesize pendingFacebookAction;
-@synthesize login;
+
+- (id)init
+{
+	if (self = [super init]) {
+		facebook = [[Facebook alloc] init];
+	}
+	return self;
+}
 
 - (void)dealloc
 {
-	[session.delegates removeObject:self];
-	[session release];
-	[login release];
+	facebook.sessionDelegate = nil;
+	[facebook release];
 	[super dealloc];
 }
 
@@ -84,32 +96,21 @@
 
 - (BOOL)isAuthorized
 {	
-	if (session == nil)
-	{
-		
-		if(!SHKFacebookUseSessionProxy){
-			self.session = [FBSession sessionForApplication:SHKFacebookKey
-													 secret:SHKFacebookSecret
-												   delegate:self];
-			
-		}else {
-			self.session = [FBSession sessionForApplication:SHKFacebookKey
-											getSessionProxy:SHKFacebookSessionProxyURL
-												   delegate:self];
-		}
-
-		
-		return [session resume];
-	}
-	
-	return [session isConnected];
+	if([facebook isSessionValid])
+		return YES;
+	else
+		return NO;
 }
 
 - (void)promptAuthorization
 {
 	self.pendingFacebookAction = SHKFacebookPendingLogin;
-	self.login = [[[FBLoginDialog alloc] initWithSession:[self session]] autorelease];
-	[login show];
+	
+	NSArray* permissions =  [[NSArray arrayWithObjects: 
+                      @"publish_stream", @"read_stream", @"offline_access", @"photo_upload" ,nil] retain];
+	
+	[facebook authorize:SHKFacebookKey permissions:permissions delegate:self];
+
 }
 
 - (void)authFinished:(SHKRequest *)request
@@ -117,117 +118,76 @@
 	
 }
 
-+ (void)logout
+- (void)logout
 {
-	FBSession *fbSession; 
-	
-	if(!SHKFacebookUseSessionProxy){
-		fbSession = [FBSession sessionForApplication:SHKFacebookKey
-												 secret:SHKFacebookSecret
-											   delegate:nil];
-		
-	}else {
-		fbSession = [FBSession sessionForApplication:SHKFacebookKey
-										getSessionProxy:SHKFacebookSessionProxyURL
-											   delegate:nil];
-	}
-
-	[fbSession logout];
+	[facebook logout:self];
 }
 
 #pragma mark -
 #pragma mark Share API Methods
 
+- (NSString*)actionLinksString {
+	SBJSON *jsonWriter = [[SBJSON new] autorelease];
+	
+	NSDictionary* actionLinks = [NSArray arrayWithObjects:[NSDictionary dictionaryWithObjectsAndKeys: 
+														   SHKMyAppName,@"text",SHKMyAppURL,@"href", nil], nil];
+	return [jsonWriter stringWithObject:actionLinks];
+}
+
 - (BOOL)send
 {			
-	if (item.shareType == SHKShareTypeURL)
+	if (item.shareType == SHKShareTypeURL || item.shareType == SHKShareTypeText )
 	{
+		SBJSON *jsonWriter = [[SBJSON new] autorelease];
+				
+		NSMutableDictionary* attachment = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+									item.title, @"name", nil];
+		
+		if ([item customValueForKey:@"caption"]) {
+			[attachment setObject:[item customValueForKey:@"caption"] forKey:@"caption"];
+		}
+		
+		if(item.shareType == SHKShareTypeURL) {
+			[attachment setObject:[item.URL absoluteString] forKey:@"href"];
+			
+			if ([item customValueForKey:@"description"]) {
+				[attachment setObject:[item customValueForKey:@"description"] forKey:@"description"];
+			}
+			
+		} else if(item.shareType == SHKShareTypeText) {
+			[attachment setObject:item.text forKey:@"description"];
+		}
+		
+		if(item.image) {
+			[attachment setObject:UIImageJPEGRepresentation(item.image,1.0) forKey:@"picture"];
+		}
+		
+
+		NSString *attachmentStr = [jsonWriter stringWithObject:attachment];
+		
+		
+		NSMutableDictionary* params = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+									   SHKFacebookKey, @"api_key",
+									   SHKLocalizedString(@"Enter your message:"),  @"user_message_prompt",
+									   [self actionLinksString], @"action_links",
+									   attachmentStr, @"attachment",
+									   nil];
+		
+		NSLog(@"AY: %@", params);
+		
+		
+		
 		self.pendingFacebookAction = SHKFacebookPendingStatus;
 		
-		SHKFBStreamDialog* dialog = [[[SHKFBStreamDialog alloc] init] autorelease];
-		dialog.delegate = self;
-		dialog.userMessagePrompt = SHKLocalizedString(@"Enter your message:");
+		[facebook dialog: @"stream.publish"
+				andParams: params
+			  andDelegate:self];
 
-		NSMutableString *additionnalData = [NSMutableString string];
-		if ([item customValueForKey:@"caption"])
-		{
-			[additionnalData appendFormat:@"\"caption\":\"%@\",", SHKEncode([item customValueForKey:@"caption"])];
-		}
-		if ([item customValueForKey:@"description"])
-		{
-			NSString *description = [[item customValueForKey:@"description"] stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
-			[additionnalData appendFormat:@"\"description\":\"%@\",", SHKEncode(description)];
-		}
-
-		// Auto-detect Dailymotion links and generate an attached embed player
-		if ([item.URL.host hasSuffix:@"dailymotion.com"])
-		{
-			BOOL idIsNextComponent = NO;
-			NSString *videoId = nil;
-			for (NSString *component in [item.URL.path componentsSeparatedByString:@"/"])
-			{
-				if (idIsNextComponent)
-				{
-					videoId = component;
-					break;
-				}
-				else if ([component isEqualToString:@"video"])
-				{
-					idIsNextComponent = YES;
-				}
-			}
-
-			if (videoId)
-			{
-				[additionnalData appendFormat:
-				 @"\"media\":[{"
-				 "\"type\":\"flash\","
-				 "\"imgsrc\":\"http://www.dailymotion.com/thumbnail/160x120/video/%@\","
-				 "\"swfsrc\":\"http://www.dailymotion.com/swf/%@?autoPlay=1\""
-				 "}],", videoId, videoId];
-			}
-		}
-
-		dialog.attachment = [NSString stringWithFormat:
-							 @"{%@\
-							 \"name\":\"%@\",\
-							 \"href\":\"%@\"\
-							 }",
-							 additionnalData,
-							 item.title == nil ? SHKEncodeURL(item.URL) : SHKEncode(item.title),
-							 SHKEncodeURL(item.URL)
-							 ];
-		dialog.defaultStatus = item.text;
-		dialog.actionLinks = [NSString stringWithFormat:@"[{\"text\":\"Get %@\",\"href\":\"%@\"}]",
-							  SHKEncode(SHKMyAppName),
-							  SHKEncode(SHKMyAppURL)];
-		[dialog show];
-		
-	}
-	
-	else if (item.shareType == SHKShareTypeText)
-	{
-		self.pendingFacebookAction = SHKFacebookPendingStatus;
-		
-		SHKFBStreamDialog* dialog = [[[SHKFBStreamDialog alloc] init] autorelease];
-		dialog.delegate = self;
-		dialog.userMessagePrompt = SHKLocalizedString(@"Enter your message:");
-		dialog.defaultStatus = item.text;
-		dialog.actionLinks = [NSString stringWithFormat:@"[{\"text\":\"Get %@\",\"href\":\"%@\"}]",
-							  SHKEncode(SHKMyAppName),
-							  SHKEncode(SHKMyAppURL)];
-		[dialog show];
-		
 	}
 	
 	else if (item.shareType == SHKShareTypeImage)
 	{		
-		self.pendingFacebookAction = SHKFacebookPendingImage;
-		
-		FBPermissionDialog* dialog = [[[FBPermissionDialog alloc] init] autorelease];
-		dialog.delegate = self;
-		dialog.permission = @"photo_upload";
-		[dialog show];		
+		[self sendImage];
 	}
 	
 	return YES;
@@ -236,21 +196,20 @@
 - (void)sendImage
 {
 	[self sendDidStart];
-
-	[[FBRequest requestWithDelegate:self] call:@"facebook.photos.upload"
-	params:[NSDictionary dictionaryWithObjectsAndKeys:item.title, @"caption", nil]
-	dataParam:UIImageJPEGRepresentation(item.image,1.0)];
+	
+	NSMutableDictionary * params = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+									UIImageJPEGRepresentation(item.image,1.0), @"picture",
+									item.title, @"caption",
+									nil];
+	[facebook requestWithMethodName: @"photos.upload" 
+						   andParams: params
+					   andHttpMethod: @"POST" 
+						 andDelegate: self];
 }
 
 - (void)dialogDidSucceed:(FBDialog*)dialog
 {
-	if (pendingFacebookAction == SHKFacebookPendingImage)
-		[self sendImage];
-	
-	// TODO - the dialog has a SKIP button.  Skipping still calls this even though it doesn't appear to post.
-	//		- need to intercept the skip and handle it as a cancel?
-	else if (pendingFacebookAction == SHKFacebookPendingStatus)
-		[self sendDidFinish];
+	[self sendDidFinish];
 }
 
 - (void)dialogDidCancel:(FBDialog*)dialog
@@ -267,7 +226,7 @@
 
 #pragma mark FBSessionDelegate methods
 
-- (void)session:(FBSession*)session didLogin:(FBUID)uid 
+-(void) fbDidLogin
 {
 	// Try to share again
 	if (pendingFacebookAction == SHKFacebookPendingLogin)
@@ -277,9 +236,13 @@
 	}
 }
 
-- (void)session:(FBSession*)session willLogout:(FBUID)uid 
+- (void)fbDidNotLogin:(BOOL)cancelled
+{	
+}
+
+
+-(void) fbDidLogout
 {
-	// Not handling this
 }
 
 
@@ -287,11 +250,11 @@
 
 - (void)request:(FBRequest*)aRequest didLoad:(id)result 
 {
-	if ([aRequest.method isEqualToString:@"facebook.photos.upload"]) 
-	{
+	//if ([aRequest. isEqualToString:@"facebook.photos.upload"]) 
+	//{
 		// PID is in [result objectForKey:@"pid"];
 		[self sendDidFinish];
-	}
+	//}
 }
 
 - (void)request:(FBRequest*)aRequest didFailWithError:(NSError*)error 

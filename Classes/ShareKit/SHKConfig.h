@@ -46,7 +46,7 @@
 // If SHKFacebookUseSessionProxy is enabled then SHKFacebookSecret is ignored and should be left blank
 
 #define SHKFacebookUseSessionProxy  NO 
-#define SHKFacebookKey				@""
+#define SHKFacebookKey				@"e4c6dee98eed01f10d6edd3cdebdd948"
 #define SHKFacebookSecret			@""
 #define SHKFacebookSessionProxyURL  @""
 
