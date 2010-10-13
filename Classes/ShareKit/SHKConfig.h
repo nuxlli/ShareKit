@@ -75,9 +75,15 @@
 #define SHKTwitterUseXAuth			0 // To use xAuth, set to 1
 #define SHKTwitterUsername			@"" // Enter your app's twitter account if you'd like to ask the user to follow it when logging in. (Only for xAuth)
 
+#define SHKShorteningURLService		@"BitLy" // or ZaptIn
+
 // Bit.ly (for shortening URLs on Twitter) - http://bit.ly/account/register - after signup: http://bit.ly/a/your_api_key
 #define SHKBitLyLogin				@""
 #define SHKBitLyKey					@""
+
+// Zapt.in (for shortening URLs on Twitter) - http://zapt.in/account/new - after signup: http://zapt.in/pages/api
+#define SHKZaptInLogin				@""
+#define SHKZaptInKey				@""
 
 // ShareMenu Ordering
 #define SHKShareMenuAlphabeticalOrder 1 // Setting this to 1 will show list in Alphabetical Order, setting to 0 will follow the order in SHKShares.plist

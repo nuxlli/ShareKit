@@ -88,6 +88,8 @@
 		43D1DEF011D5CDD200550D75 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43D1DEEF11D5CDD200550D75 /* SystemConfiguration.framework */; };
 		43EF406E11D3FFF800B1F700 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43EF406D11D3FFF800B1F700 /* Security.framework */; };
 		43FF9C7412270E9F00ADE53C /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 43FF9C7212270E9F00ADE53C /* Localizable.strings */; };
+		7A9D0D59126646CA00F7C9A7 /* SHKBitLy.m in Sources */ = {isa = PBXBuildFile; fileRef = 7A9D0D58126646CA00F7C9A7 /* SHKBitLy.m */; };
+		7A9D0DA512665CCA00F7C9A7 /* SHKZaptIn.m in Sources */ = {isa = PBXBuildFile; fileRef = 7A9D0DA412665CCA00F7C9A7 /* SHKZaptIn.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -246,6 +248,10 @@
 		43FF9C7312270E9F00ADE53C /* en */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = en; path = Classes/ShareKit/Localization/en.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
 		43FF9C7512270EB900ADE53C /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = Classes/ShareKit/Localization/de.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
 		43FF9C7712270ED900ADE53C /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = Classes/ShareKit/Localization/ko.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		7A9D0D57126646CA00F7C9A7 /* SHKBitLy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SHKBitLy.h; sourceTree = "<group>"; };
+		7A9D0D58126646CA00F7C9A7 /* SHKBitLy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SHKBitLy.m; sourceTree = "<group>"; };
+		7A9D0DA312665CCA00F7C9A7 /* SHKZaptIn.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SHKZaptIn.h; sourceTree = "<group>"; };
+		7A9D0DA412665CCA00F7C9A7 /* SHKZaptIn.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SHKZaptIn.m; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* ShareKit-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "ShareKit-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -653,6 +659,7 @@
 		43A536E711DBE3B9004A1712 /* Twitter */ = {
 			isa = PBXGroup;
 			children = (
+				7A9D0D56126646AB00F7C9A7 /* Shorteners */,
 				43A536E811DBE3B9004A1712 /* SHKTwitter.h */,
 				43A536E911DBE3B9004A1712 /* SHKTwitter.m */,
 				43A536EA11DBE3B9004A1712 /* SHKTwitterForm.h */,
@@ -729,6 +736,17 @@
 				43FF9C7212270E9F00ADE53C /* Localizable.strings */,
 			);
 			name = Localization;
+			sourceTree = "<group>";
+		};
+		7A9D0D56126646AB00F7C9A7 /* Shorteners */ = {
+			isa = PBXGroup;
+			children = (
+				7A9D0D57126646CA00F7C9A7 /* SHKBitLy.h */,
+				7A9D0D58126646CA00F7C9A7 /* SHKBitLy.m */,
+				7A9D0DA312665CCA00F7C9A7 /* SHKZaptIn.h */,
+				7A9D0DA412665CCA00F7C9A7 /* SHKZaptIn.m */,
+			);
+			path = Shorteners;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -867,6 +885,8 @@
 				43C91DF511EBAE4800F31FAE /* SHKTumblr.m in Sources */,
 				43B934B511FE682600C9D3F3 /* SHKFBStreamDialog.m in Sources */,
 				432B147C11FF4B0700291B37 /* SHKPhotoAlbum.m in Sources */,
+				7A9D0D59126646CA00F7C9A7 /* SHKBitLy.m in Sources */,
+				7A9D0DA512665CCA00F7C9A7 /* SHKZaptIn.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

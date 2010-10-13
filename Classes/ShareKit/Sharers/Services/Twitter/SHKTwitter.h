@@ -31,11 +31,12 @@
 
 @interface SHKTwitter : SHKOAuthSharer 
 {	
-	BOOL xAuth;		
+	BOOL xAuth;
+	NSString *shorteningService;
 }
 
 @property BOOL xAuth;
-
+@property (retain) NSString *shorteningService;
 
 #pragma mark -
 #pragma mark UI Implementation
@@ -46,7 +47,7 @@
 #pragma mark Share API Methods
 
 - (void)shortenURL;
-- (void)shortenURLFinished:(SHKRequest *)aRequest;
+- (void)shortenURLFinished:(NSString *)aRequest;
 
 - (void)sendForm:(SHKTwitterForm *)form;
 

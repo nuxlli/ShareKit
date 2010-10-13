@@ -30,14 +30,21 @@
 
 #import "SHKTwitter.h"
 
+#import "SHKBitLy.h"
+#import "SHKZaptIn.h"
+
 @implementation SHKTwitter
 
 @synthesize xAuth;
+@synthesize shorteningService;
 
 - (id)init
 {
 	if (self = [super init])
 	{	
+		// Shortening Service
+		self.shorteningService = SHKShorteningURLService;
+		
 		// OAUTH		
 		self.consumerKey = SHKTwitterConsumerKey;		
 		self.secretKey = SHKTwitterSecret;
@@ -58,6 +65,11 @@
 	return self;
 }
 
+- (void)dealloc
+{
+	[shorteningService release];
+	[super dealloc];
+}
 
 #pragma mark -
 #pragma mark Configuration : Service Defination
@@ -230,55 +242,19 @@
 
 - (void)shortenURL
 {	
-	if (![SHK connected])
-	{
-		[item setCustomValue:[NSString stringWithFormat:@"%@ %@", item.title, [item.URL.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] forKey:@"status"];
-		[self showTwitterForm];		
-		return;
-	}
-	
 	if (!quiet)
 		[[SHKActivityIndicator currentIndicator] displayActivity:SHKLocalizedString(@"Shortening URL...")];
 	
-	self.request = [[[SHKRequest alloc] initWithURL:[NSURL URLWithString:[NSMutableString stringWithFormat:@"http://api.bit.ly/v3/shorten?login=%@&apikey=%@&longUrl=%@&format=txt",
-																		 SHKBitLyLogin,
-																		  SHKBitLyKey,																		  
-																		  SHKEncodeURL(item.URL)
-																		 ]]
-											params:nil
-										  delegate:self
-								isFinishedSelector:@selector(shortenURLFinished:)
-											method:@"GET"
-										  autostart:YES] autorelease];
+	id class = NSClassFromString([NSString stringWithFormat:@"SHK%@", self.shorteningService]);
+	[[class alloc] initWithUrl:item.URL delegate:self isFinishedSelector:@selector(shortenURLFinished:)];
 }
 
-- (void)shortenURLFinished:(SHKRequest *)aRequest
+- (void)shortenURLFinished:(NSString *)shortUrl
 {
 	[[SHKActivityIndicator currentIndicator] hide];
 	
-	NSString *result = [[aRequest getResult] stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+	[item setCustomValue:[NSString stringWithFormat:@"%@ %@", item.text ? item.text : item.title, shortUrl] forKey:@"status"];
 	
-	if (result == nil || [NSURL URLWithString:result] == nil)
-	{
-		// TODO - better error message
-		[[[[UIAlertView alloc] initWithTitle:SHKLocalizedString(@"Shorten URL Error")
-									 message:SHKLocalizedString(@"We could not shorten the URL.")
-									delegate:nil
-						   cancelButtonTitle:SHKLocalizedString(@"Continue")
-						   otherButtonTitles:nil] autorelease] show];
-		
-		[item setCustomValue:[NSString stringWithFormat:@"%@ %@", item.text ? item.text : item.title, [item.URL.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]] forKey:@"status"];
-	}
-	
-	else
-	{		
-		///if already a bitly login, use url instead
-		if ([result isEqualToString:@"ALREADY_A_BITLY_LINK"])
-			result = [item.URL.absoluteString stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-		
-		[item setCustomValue:[NSString stringWithFormat:@"%@ %@", item.text ? item.text : item.title, result] forKey:@"status"];
-	}
-
 	[self showTwitterForm];
 }
 
