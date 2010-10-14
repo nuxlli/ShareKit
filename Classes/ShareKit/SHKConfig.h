@@ -75,7 +75,7 @@
 #define SHKTwitterUseXAuth			0 // To use xAuth, set to 1
 #define SHKTwitterUsername			@"" // Enter your app's twitter account if you'd like to ask the user to follow it when logging in. (Only for xAuth)
 
-#define SHKShorteningURLService		@"BitLy" // or ZaptIn
+#define SHKShorteningURLService		@"SHKBitLy" // or SHKZaptIn
 
 // Bit.ly (for shortening URLs on Twitter) - http://bit.ly/account/register - after signup: http://bit.ly/a/your_api_key
 #define SHKBitLyLogin				@""

@@ -245,7 +245,7 @@
 	if (!quiet)
 		[[SHKActivityIndicator currentIndicator] displayActivity:SHKLocalizedString(@"Shortening URL...")];
 	
-	id class = NSClassFromString([NSString stringWithFormat:@"SHK%@", self.shorteningService]);
+	id class = NSClassFromString(self.shorteningService);
 	[[class alloc] initWithUrl:item.URL delegate:self isFinishedSelector:@selector(shortenURLFinished:)];
 }
 
